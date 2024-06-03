@@ -17,7 +17,8 @@ public class DeliverReferralConsumer: IConsumer<DeliverReferralCmd>
     
     public async Task Consume(ConsumeContext<DeliverReferralCmd> context)
     {
-        _logger.LogInformation("Received referral key {ReferralKey} AttemptNumber={Attempt}", context.Message.ReferralKey, context.GetRedeliveryCount());
+        _logger.LogInformation("Received referral key {ReferralKey} AttemptNumber={AttemptNumber} RedeliveryCount={RedeliveryCount}", 
+            context.Message.ReferralKey, context.GetRetryAttempt(), context.GetRedeliveryCount());
         await Task.Delay(5000);
         
         var referral = await _db.Referrals.FindAsync(context.Message.ReferralKey);

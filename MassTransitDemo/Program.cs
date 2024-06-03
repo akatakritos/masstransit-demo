@@ -26,9 +26,6 @@ builder.Services.AddMassTransit(x =>
         // you can find the value in the azure portal, you need a key with Manage rights bc Masstransit will create topics and queues for you
         cfg.Host(builder.Configuration["SbConnectionString"]);
         
-        // Retry immediately 3 times
-        cfg.UseMessageRetry(r => r.Immediate(3)); // try 3 times immediately
-        
         // Then start using Scheduled send to delay retries
         cfg.UseDelayedRedelivery(r => r.Intervals(
             TimeSpan.FromSeconds(30),
@@ -44,6 +41,9 @@ builder.Services.AddMassTransit(x =>
             TimeSpan.FromHours(24),
             TimeSpan.FromHours(24),
             TimeSpan.FromHours(24)));
+        
+        // Retry immediately 3 times. Order matters; its outside-in. So this will be tried first, then the delayed redelivery will take over if this fails
+        cfg.UseMessageRetry(r => r.Immediate(3)); // try 3 times immediately
         
         // Tell mass transit to use ASB as the message scheduler for delayed or scheduled messages
         cfg.UseServiceBusMessageScheduler();
