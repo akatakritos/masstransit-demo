@@ -27,20 +27,17 @@ builder.Services.AddMassTransit(x =>
         cfg.Host(builder.Configuration["SbConnectionString"]);
         
         // Then start using Scheduled send to delay retries
-        cfg.UseDelayedRedelivery(r => r.Intervals(
-            TimeSpan.FromSeconds(30),
-            TimeSpan.FromMinutes(2),
-            TimeSpan.FromMinutes(5),
-            TimeSpan.FromMinutes(10),
-            TimeSpan.FromMinutes(30),
-            TimeSpan.FromHours(1),
-            TimeSpan.FromHours(2),
-            TimeSpan.FromHours(4),
-            TimeSpan.FromHours(8),
-            TimeSpan.FromHours(16),
-            TimeSpan.FromHours(24),
-            TimeSpan.FromHours(24),
-            TimeSpan.FromHours(24)));
+
+        // delay time is $minInterval + (2^$retry * $intervalDelta)
+        //
+        // Will quit when $maxInterval is reached
+        //
+
+        cfg.UseDelayedRedelivery(r => r.Exponential(
+            retryLimit: int.MaxValue,
+            minInterval: TimeSpan.FromSeconds(15),
+            maxInterval: TimeSpan.FromHours(36), // by the time we are waiting 36 hours between attempts, its been 3 days so we should just stop
+            intervalDelta: TimeSpan.FromSeconds(2)));
         
         // Retry immediately 3 times. Order matters; its outside-in. So this will be tried first, then the delayed redelivery will take over if this fails
         cfg.UseMessageRetry(r => r.Immediate(3)); // try 3 times immediately
